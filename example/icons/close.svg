@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!--
+qml-component-explorer, a tool for listing native QML components and their attributes
+    Copyright (C) 2026  Lukas Winter
+ is licensed under GPL-3.0 (see LICENSE file)
+-->
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   width="48"
+   height="48"
+   viewBox="0 0 48 48"
+   version="1.1"
+   id="svg1"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <defs
+     id="defs1" />
+  <g
+     id="layer1"
+     style="display:inline">
+    <path
+       style="fill:#000000;stroke-width:1.00157"
+       d="M 8.5907384,44.515644 45.056321,8.0500626 40.550689,3.5444306 4.0851064,39.979975 Z"
+       id="path1" />
+    <path
+       style="fill:#000000;stroke-width:1.00157"
+       d="M 4.085107,8.050062 40.550688,44.515645 45.05632,40.010013 8.620776,3.54443 Z"
+       id="path2" />
+  </g>
+</svg>

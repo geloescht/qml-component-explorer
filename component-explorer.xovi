@@ -1,0 +1,7 @@
+version 0.1.0
+
+override _ZN11QQmlPrivate11qmlregisterENS_16RegistrationTypeEPv
+with
+    $noLock = 1
+end
+import? _ZN11QQmlPrivate11qmlregisterENS_16RegistrationTypeEPv

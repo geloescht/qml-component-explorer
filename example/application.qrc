@@ -1,0 +1,10 @@
+<RCC>
+    <qresource>
+        <file>Main.qml</file>
+    </qresource>
+    <qresource>
+        <file>icons/back.svg</file>
+        <file>icons/forward.svg</file>
+        <file>icons/close.svg</file>
+    </qresource>
+</RCC>
