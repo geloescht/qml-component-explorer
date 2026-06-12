@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!--
+qml-component-explorer, a tool for listing native QML components and their attributes
+    Copyright (C) 2026  Lukas Winter
+ is licensed under GPL-3.0 (see LICENSE file)
+-->
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   width="48"
+   height="48"
+   viewBox="0 0 48 48"
+   version="1.1"
+   id="svg1"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <defs
+     id="defs1" />
+  <g
+     id="layer8"
+     style="display:inline">
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:31.5869px;font-family:Carlito;-inkscape-font-specification:'Carlito Bold';writing-mode:lr-tb;direction:ltr;fill:#000000;fill-opacity:1;stroke-width:0.659094"
+       x="5.5031161"
+       y="33.948223"
+       id="text15"><tspan
+         id="tspan15"
+         x="5.5031161"
+         y="33.948223"
+         style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-family:Carlito;-inkscape-font-specification:'Carlito Bold';stroke-width:0.659094">{E}</tspan></text>
+  </g>
+</svg>

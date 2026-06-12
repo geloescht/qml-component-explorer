@@ -3,8 +3,15 @@
         <file>Main.qml</file>
     </qresource>
     <qresource>
-        <file>icons/back.svg</file>
-        <file>icons/forward.svg</file>
+        <file>icons/wait.svg</file>
         <file>icons/close.svg</file>
+        <file>icons/filter-name.svg</file>
+        <file>icons/filter-property.svg</file>
+        <file>icons/filter-method.svg</file>
+        <file>icons/filter-enum.svg</file>
+        <file>icons/no-filter-name.svg</file>
+        <file>icons/no-filter-property.svg</file>
+        <file>icons/no-filter-method.svg</file>
+        <file>icons/no-filter-enum.svg</file>
     </qresource>
 </RCC>

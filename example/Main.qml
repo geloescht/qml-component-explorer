@@ -62,23 +62,100 @@ Rectangle {
                     anchors.top: parent.top
                     z: 1
 
-                    TextField {
-                        id: filterInput
-                        color: "#000000"
+                    RowLayout {
+                        id: filterLayout
                         anchors.fill: parent
+                        spacing: 5
                         anchors.margins: 5
-                        verticalAlignment: Text.AlignVCenter
-                        placeholderText: qsTr("Filter Components...")
-                        font.pointSize: 12
-                        padding: 10
 
-                        property string acceptedText: ""
+                        TextField {
+                            id: filterInput
+                            color: "#000000"
+                            verticalAlignment: Text.AlignVCenter
+                            Layout.fillWidth: true
+                            placeholderText: qsTr("Filter Components...")
+                            font.pointSize: 12
+                            padding: 5
 
-                        Connections {
-                            target: filterInput
-                            function onAccepted() {
-                                filterInput.focus = false;
-                                filterInput.acceptedText = filterInput.text;
+                            property string acceptedText: ""
+
+                            Connections {
+                                target: filterInput
+                                function onAccepted() {
+                                    filterInput.focus = false
+                                }
+                            }
+
+                            Connections {
+                                target: filterInput
+                                function onAccepted() {
+                                    filterInput.focus = false;
+                                    componentListView.model.setFilter(filterInput.text.split(" "), filterName.filterActive + filterProperty.filterActive + filterEnum.filterActive);
+                                }
+                            }
+                        }
+
+                        Image {
+                            id: filterName
+                            property int filterActive: TypeList.FilterName
+
+                            width: 32
+                            height: 32
+                            source: filterActive ? "icons/filter-name.svg" : "icons/no-filter-name.svg"
+                            fillMode: Image.PreserveAspectFit
+                            visible: !componentListView.currentItem
+                            
+                            MouseArea {
+                                id: filterNameMouseArea
+                                anchors.fill: parent
+                                Connections {
+                                    target: filterNameMouseArea
+                                    function onClicked() {
+                                        filterName.filterActive = filterName.filterActive ? 0 : TypeList.FilterName
+                                    }
+                                }
+                            }
+                        }
+
+                        Image {
+                            id: filterProperty
+                            width: 32
+                            height: 32
+                            source: filterActive ? "icons/filter-property.svg" : "icons/no-filter-property.svg"
+                            property int filterActive: 0
+                            fillMode: Image.PreserveAspectFit
+                            visible: !componentListView.currentItem
+                            
+                            MouseArea {
+                                id: filterPropertyMouseArea
+                                anchors.fill: parent
+                                Connections {
+                                    target: filterPropertyMouseArea
+                                    function onClicked() {
+                                        filterProperty.filterActive = filterProperty.filterActive ? 0 : TypeList.FilterProperties
+                                    }
+                                }
+                            }
+                        }
+
+                        Image {
+                            id: filterEnum
+                            width: 32
+                            height: 32
+                            source: filterActive ? "icons/filter-enum.svg" : "icons/no-filter-enum.svg"
+                            property int filterActive: 0
+                            fillMode: Image.PreserveAspectFit
+                            visible: !componentListView.currentItem
+                            
+                            MouseArea {
+                                id: filterEnumMouseArea
+                                anchors.fill: parent
+                                Connections {
+                                    target: filterEnumMouseArea
+                                    function onClicked() {
+                                        filterEnum.filterActive = filterEnum.filterActive ? 0 : TypeList.FilterEnums
+                                    }
+                                }
                             }
                         }
                     }
@@ -142,13 +219,11 @@ Rectangle {
 
                     delegate: Rectangle {
                         id: componentListItemRect
-                        property bool inFilter: filterInput.acceptedText == ""
-                                                || name.toLowerCase().includes(filterInput.acceptedText.toLowerCase())
-                        height: inFilter ? 50 : 0
+                        height: filterMatch > 0 ? 50 : 0
                         width: componentList.width
                         color: ListView.isCurrentItem ? "#FF000000" : "#00000000"
                         border.width: 1
-                        visible: inFilter
+                        visible: filterMatch > 0
 
                         Rectangle {
                             width: 50

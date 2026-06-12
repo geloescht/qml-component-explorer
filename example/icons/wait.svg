@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!--
+qml-component-explorer, a tool for listing native QML components and their attributes
+    Copyright (C) 2026  Lukas Winter
+ is licensed under GPL-3.0 (see LICENSE file)
+-->
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   width="48"
+   height="48"
+   viewBox="0 0 48 48"
+   version="1.1"
+   id="svg1"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <defs
+     id="defs1" />
+  <g
+     id="layer3"
+     style="display:inline">
+    <rect
+       style="fill:#000000;stroke-width:1.00157"
+       id="rect1"
+       width="48"
+       height="48"
+       x="0"
+       y="0" />
+    <path
+       style="font-size:48px;font-family:Carlito;-inkscape-font-specification:Carlito;fill:#ffffff;stroke-width:1.00157"
+       d="m 15.386573,24.424194 c 0.04176,2.071091 -2.460893,3.550595 -4.281738,2.522461 -1.4816194,-0.836592 -1.9331706,-2.895774 -0.92505,-4.266357 0.947157,-1.2877 2.898918,-1.556106 4.108155,-0.507569 0.652908,0.566141 1.081051,1.379548 1.098633,2.251465 z m 12.117187,0 c 0.04176,2.071091 -2.460893,3.550596 -4.281738,2.522461 -1.481619,-0.836592 -1.933169,-2.895774 -0.925049,-4.266357 0.947157,-1.287701 2.898918,-1.556107 4.108154,-0.507569 0.652908,0.566142 1.081051,1.379548 1.098633,2.251465 z m 12.117188,0 c 0.04176,2.071091 -2.460893,3.550595 -4.281738,2.522461 -1.481619,-0.836592 -1.933171,-2.895774 -0.92505,-4.266357 0.947157,-1.2877 2.898918,-1.556106 4.108155,-0.507569 0.652908,0.566141 1.081051,1.379548 1.098633,2.251465 z"
+       id="text1"
+       aria-label="..." />
+  </g>
+</svg>

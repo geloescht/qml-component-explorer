@@ -11,6 +11,8 @@ qml-component-explorer, a tool for listing native QML components and their attri
 #include <QString>
 #include <QVariant>
 #include <QQmlEngine>
+#include <QList>
+#include <QBitArray>
 #include <QAbstractListModel>
 #include "MethodList.h"
 #include "PropertyList.h"
@@ -22,28 +24,21 @@ class TypeList: public QAbstractListModel
     
     private:
     std::vector<const QMetaObject*> metaObjects;
+    QList<int> filterMaskCache;
     
     public:
-    enum PropertyRole { RoleName, RoleNProperties, RolePropertiesPreview, RoleNMethods, RoleMethodsPreview, RoleSuperclassName };
+    enum PropertyRole { RoleName, RoleNProperties, RolePropertiesPreview, RoleNMethods, RoleMethodsPreview, RoleSuperclassName, RoleFilterMatch };
     Q_ENUM(PropertyRole)
+    enum FilterFlag { FilterName = 1, FilterProperties = 2, FilterMethods = 4, FilterEnums = 8, FilterCaseInsensitive = 16 };
+    Q_ENUM(FilterFlag)
+    Q_DECLARE_FLAGS(FilterFlags, FilterFlag)
     
     
     void addMetaObject(const QMetaObject *metaObject) {
+        beginInsertRows(QModelIndex(), metaObjects.size(), metaObjects.size());
         metaObjects.push_back(metaObject);
         std::printf("[component-explorer] Added MetaObject (%p) with name %s and %i methods\n", metaObject, metaObject->className(), metaObject->methodCount());
-        /*
-        for(int i = 0; i < metaObject->methodCount(); i++) {
-            auto methodSignature = metaObject->method(i).methodSignature();
-            std::printf("%s, ", methodSignature.data());
-        }
-        std::printf("\n");*/
-    }
-    
-    ~TypeList() {
-        for(auto iter = metaObjects.begin(), end = metaObjects.end(); iter != end; ++iter) {
-            auto metaObject = *iter;
-            std::printf("[component-explorer] {%p, \"%s\"}\n", metaObject, metaObject->className());
-        }
+        endInsertRows();
     }
     
     int rowCount(const QModelIndex &parent = QModelIndex()) const {
@@ -57,7 +52,8 @@ class TypeList: public QAbstractListModel
             std::make_pair((int)RolePropertiesPreview, QByteArray("propertiesPreview")),
             std::make_pair((int)RoleNMethods, QByteArray("nMethods")),
             std::make_pair((int)RoleMethodsPreview, QByteArray("methodsPreview")),
-            std::make_pair((int)RoleSuperclassName, QByteArray("superclassName"))
+            std::make_pair((int)RoleSuperclassName, QByteArray("superclassName")),
+            std::make_pair((int)RoleFilterMatch, QByteArray("filterMatch"))
         };
     }
     
@@ -82,13 +78,21 @@ class TypeList: public QAbstractListModel
             case 4: //methodsPreview
                 return "not implemented";
             break;
-            case RoleSuperclassName:
+            case RoleSuperclassName: {
                 auto *superclass = metaObject->superClass();
                 if(superclass)
                 {
                     return superclass->className();
                 } else
                     return "";
+            } break;
+            case RoleFilterMatch:
+                if(index.row() < filterMaskCache.length()) {
+                    //std::printf("fm at %i = %i\n", index.row(), filterMaskCache[index.row()]);
+                    return filterMaskCache[index.row()];
+                }
+                else
+                    return 1;
             break;
         }
         return QVariant();
@@ -113,6 +117,124 @@ class TypeList: public QAbstractListModel
             return 0;
         }
         return new EnumList(metaObjects[index], membership);
+    }
+
+    Q_INVOKABLE void setFilter(const QList<QByteArray>& filterTerms, FilterFlags filterItems = FilterName) {
+        QList<QByteArray> mandatoryTerms, excludedTerms, alternativeTerms;
+        for (auto& termUntrimmed : filterTerms) {
+            auto term = termUntrimmed.trimmed();
+            if(term.length() < 1)
+                continue;
+            
+            if(term.startsWith("+")) {
+                mandatoryTerms.append(term.sliced(1));
+                std::printf("mandatory %s, ", term.sliced(1).constData());
+            }
+            else if(term.startsWith("-")) {
+                excludedTerms.append(term.sliced(1));
+                std::printf("excluded %s, ", term.sliced(1).constData());
+            } else {
+                alternativeTerms.append(term);
+                std::printf("alternative %s, ", term.constData());
+            }
+        }
+        std::printf("filtering...\n");
+        
+        emit layoutAboutToBeChanged();
+        
+        if(mandatoryTerms.isEmpty() && excludedTerms.isEmpty() && alternativeTerms.isEmpty()) {
+            filterMaskCache.fill(1);
+            emit dataChanged(index(0, 0), index(metaObjects.size(), 0));
+            emit layoutChanged();
+            return;
+        }
+        
+        filterMaskCache.resize(metaObjects.size());
+        
+        QList<QByteArrayView> haystack;
+        QBitArray alternativeFound(alternativeTerms.length());
+        const QBitArray allMandatoryFound(mandatoryTerms.length(), true);
+        
+        for (int i = 0; i < metaObjects.size(); ++i) {
+            const QMetaObject* metaObject = metaObjects[i];
+            
+            // collect all the strings to be examined in haystack
+            haystack.clear();
+            if(filterItems & FilterName) {
+                haystack.append(metaObject->className());
+            }
+            for(int i = 0; filterItems & FilterProperties && i < metaObject->propertyCount(); ++i) {
+                haystack.append(metaObject->property(i).name());
+            }
+            /*for(int i = 0; filterItems & FilterMethods && i < metaObject->methodCount(); ++i) {
+                haystack.append(metaObject->method(i).nameView());
+            }*/
+            for(int i = 0; filterItems & FilterEnums && i < metaObject->enumeratorCount(); ++i) {
+                haystack.append(metaObject->enumerator(i).name());
+            }
+            
+            /*
+            std::printf("Haystack (flags %i): ", filterItems.toInt());
+            for(auto& toBeFiltered : haystack) {
+                std::printf("%s, ", toBeFiltered.constData());
+            }
+            */
+            bool haveHope = true;
+            alternativeFound.fill(false);
+            
+            for (auto& term : excludedTerms) {
+                for(auto& toBeFiltered : haystack) {
+                    if(toBeFiltered.contains(term)) {
+                        haveHope = false;
+                        break;
+                    }
+                }
+                if(!haveHope)
+                    break;
+            }
+            
+            if(haveHope) {
+                for (int i = 0; i < mandatoryTerms.length(); i++) {
+                    auto term = mandatoryTerms[i];
+                    bool found = false;
+                    for(auto& toBeFiltered : haystack) {
+                        if(toBeFiltered.contains(term)) {
+                            found = true;
+                            break;
+                        }
+                    }
+                    if(!found) {
+                        haveHope = false;
+                        break;
+                    }
+                }
+            }
+            
+            if(haveHope) {
+                for (int i = 0; i < alternativeTerms.length(); i++) {
+                    auto term = alternativeTerms[i];
+                    for(auto& toBeFiltered : haystack) {
+                        if(toBeFiltered.contains(term)) {
+                            alternativeFound.setBit(i);
+                            break;
+                        }
+                    }
+                }
+                //std::printf("count %i ", alternativeFound.count(true));
+                if(alternativeTerms.length() > 0)
+                  filterMaskCache[i] = alternativeFound.count(true);
+                else
+                  filterMaskCache[i] = mandatoryTerms.length() + excludedTerms.length();
+            } else {
+                //std::printf("giving up ");
+                filterMaskCache[i] = 0;
+            }
+            //std::printf("done.\n");
+        }
+        
+        std::printf("done.\n");
+        emit dataChanged(index(0, 0), index(metaObjects.size(), 0));
+        emit layoutChanged();
     }
 };
 #endif
