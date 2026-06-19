@@ -79,19 +79,12 @@ Rectangle {
 
                             property string acceptedText: ""
 
-                            Connections {
-                                target: filterInput
-                                function onAccepted() {
-                                    filterInput.focus = false
-                                }
-                            }
-
-                            Connections {
-                                target: filterInput
-                                function onAccepted() {
-                                    filterInput.focus = false;
-                                    componentListView.model.setFilter(filterInput.text.split(" "), filterName.filterActive + filterProperty.filterActive + filterEnum.filterActive);
-                                }
+                            onAccepted: SequentialAnimation {
+                                ScriptAction { script: filterInput.focus = false }
+                                ScriptAction { script: loadingImage.visible = true }
+                                PauseAnimation { duration: 100 }
+                                ScriptAction { script: componentListView.model.setFilter(filterInput.text.split(" "), filterName.filterActive + filterProperty.filterActive + filterEnum.filterActive) }
+                                ScriptAction { script: loadingImage.visible = false }
                             }
                         }
 
@@ -287,7 +280,7 @@ Rectangle {
                             }
                         }
                     }
-                    
+
                     function getModelProperty(rowIndex, propertyIndex) {
                         return model.data(model.index(rowIndex, 0), propertyIndex);
                     }
@@ -295,6 +288,20 @@ Rectangle {
                     function getCurrentItemProperty(propertyIndex) {
                         return getModelProperty(currentIndex, propertyIndex);
                     }
+                }
+
+                Image {
+                    id: loadingImage
+                    anchors.left: parent.left
+                    anchors.right: parent.right
+                    anchors.top: filterRect.bottom
+                    anchors.bottom: parent.bottom
+                    source: "icons/wait.svg"
+                    sourceSize.height: 48
+                    sourceSize.width: 48
+                    fillMode: Image.Pad
+
+                    visible: false
                 }
             }
 
