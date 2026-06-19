@@ -14,16 +14,45 @@ qml-component-explorer, a tool for listing native QML components and their attri
 #include <QList>
 #include <QBitArray>
 #include <QAbstractListModel>
+#include <boost/multi_index_container.hpp>
+#include <boost/multi_index/ordered_index.hpp>
+#include <boost/multi_index/ranked_index.hpp>
+#include <boost/multi_index/identity.hpp>
+#include <boost/multi_index/member.hpp>
+#include <boost/multi_index/mem_fun.hpp>
 #include "MethodList.h"
 #include "PropertyList.h"
 #include "EnumList.h"
+
+using namespace boost::multi_index;
 
 class TypeList: public QAbstractListModel
 {
     Q_OBJECT
     
     private:
-    std::vector<const QMetaObject*> metaObjects;
+    struct ClassName{};
+
+    struct TypeInfo {
+        const QMetaObject* metaObject;
+
+        const QByteArrayView className() const {
+            return QByteArrayView(metaObject->className());
+        }
+
+        bool operator<(const TypeInfo& other) const {
+            return metaObject < other.metaObject;
+        }
+    };
+
+    typedef multi_index_container<
+        TypeInfo,
+        indexed_by<
+            ordered_unique<identity<TypeInfo> >,
+            ranked_non_unique<tag<ClassName>, const_mem_fun<TypeInfo, const QByteArrayView, &TypeInfo::className> >
+        >
+    > TypeInfoContainer;
+    TypeInfoContainer metaObjects;
     QList<int> filterMaskCache;
     
     public:
@@ -36,7 +65,8 @@ class TypeList: public QAbstractListModel
     
     void addMetaObject(const QMetaObject *metaObject) {
         beginInsertRows(QModelIndex(), metaObjects.size(), metaObjects.size());
-        metaObjects.push_back(metaObject);
+        TypeInfo typeInfo = {metaObject};
+        metaObjects.get<0>().insert(typeInfo);
         std::printf("[component-explorer] Added MetaObject (%p) with name %s and %i methods\n", metaObject, metaObject->className(), metaObject->methodCount());
         endInsertRows();
     }
@@ -61,7 +91,7 @@ class TypeList: public QAbstractListModel
         if(index.row() < 0 || index.row() >= metaObjects.size()) {
             return QVariant();
         }
-        auto metaObject = metaObjects.at(index.row());
+        auto metaObject = metaObjects.get<ClassName>().nth(index.row())->metaObject;
         switch(role) {
             case 0: //name
                 return metaObject->className();
@@ -102,21 +132,21 @@ class TypeList: public QAbstractListModel
         if(index < 0 || index >= metaObjects.size()) {
             return 0;
         }
-        return new MethodList(metaObjects[index], membership);
+        return new MethodList(metaObjects.get<ClassName>().nth(index)->metaObject, membership);
     }
     
     Q_INVOKABLE PropertyList* propertyList(int index, PropertyList::ClassMembership membership=PropertyList::OwnProperties) const {
         if(index < 0 || index >= metaObjects.size()) {
             return 0;
         }
-        return new PropertyList(metaObjects[index], membership);
+        return new PropertyList(metaObjects.get<ClassName>().nth(index)->metaObject, membership);
     }
     
     Q_INVOKABLE EnumList* enumList(int index, EnumList::ClassMembership membership=EnumList::OwnEnums) const {
         if(index < 0 || index >= metaObjects.size()) {
             return 0;
         }
-        return new EnumList(metaObjects[index], membership);
+        return new EnumList(metaObjects.get<ClassName>().nth(index)->metaObject, membership);
     }
 
     Q_INVOKABLE void setFilter(const QList<QByteArray>& filterTerms, FilterFlags filterItems = FilterName) {
@@ -155,8 +185,9 @@ class TypeList: public QAbstractListModel
         QBitArray alternativeFound(alternativeTerms.length());
         const QBitArray allMandatoryFound(mandatoryTerms.length(), true);
         
-        for (int i = 0; i < metaObjects.size(); ++i) {
-            const QMetaObject* metaObject = metaObjects[i];
+        int i = 0;
+        for (auto& typeInfo : metaObjects.get<ClassName>()) {
+            const QMetaObject* metaObject = typeInfo.metaObject;
             
             // collect all the strings to be examined in haystack
             haystack.clear();
@@ -230,6 +261,7 @@ class TypeList: public QAbstractListModel
                 filterMaskCache[i] = 0;
             }
             //std::printf("done.\n");
+            ++i;
         }
         
         std::printf("done.\n");
