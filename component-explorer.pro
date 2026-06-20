@@ -19,7 +19,7 @@ CONFIG += c++11
 # Specify the source files
 SOURCES += main.cpp xovi.cpp 
 
-HEADERS += TypeList.h MethodList.h PropertyList.h EnumList.h
+HEADERS += TypeList.h MethodList.h PropertyList.h EnumList.h TypeHandle.h
 
 QMAKE_CXXFLAGS += -fPIC 
 

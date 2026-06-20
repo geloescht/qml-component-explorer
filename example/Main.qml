@@ -280,6 +280,14 @@ Rectangle {
                             }
                         }
                     }
+                    
+                    function navigate(typeHandle) {
+                        let index = componentListView.model.indexOf(typeHandle);
+                        if(index >= 0) {
+                            positionViewAtIndex(index, ListView.Contain);
+                            currentIndex = index;
+                        }
+                    }
 
                     function getModelProperty(rowIndex, propertyIndex) {
                         return model.data(model.index(rowIndex, 0), propertyIndex);
@@ -364,8 +372,13 @@ Rectangle {
                         Text {
                             property string superclass: componentListView.getModelProperty(componentListView.currentIndex, TypeList.RoleSuperclassName)
                             visible: superclass != ""
-                            text: "inherits " + superclass
+                            text: 'inherits <a href="superclass">' + superclass + '</a>'
                             font.pointSize: 14
+                            
+                            onLinkActivated: {
+                                let handle = componentListView.getModelProperty(componentListView.currentIndex, TypeList.RoleSuperclassHandle);
+                                componentListView.navigate(handle);
+                            }
                         }
 
                         Component {
@@ -430,10 +443,12 @@ Rectangle {
                                     width: 10
                                 }
                                 Text {
-                                    text: type + " " + name
+                                    text: '<a href=\"type\">' + typeName + "</a> " + name
                                     font.family: "Monaspace Xenon"
                                     font.pointSize: 12
                                     Layout.fillWidth: true
+                                    
+                                    onLinkActivated: componentListView.navigate(typeHandle)
                                 }
 
                                 Text {

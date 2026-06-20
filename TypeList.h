@@ -28,6 +28,7 @@ qml-component-explorer, a tool for listing native QML components and their attri
 #include "MethodList.h"
 #include "PropertyList.h"
 #include "EnumList.h"
+#include "TypeHandle.h"
 
 using namespace boost::multi_index;
 
@@ -53,7 +54,7 @@ class TypeList: public QAbstractListModel
     typedef multi_index_container<
         TypeInfo,
         indexed_by<
-            ordered_unique<identity<TypeInfo> >,
+            ordered_unique<member<TypeInfo, const QMetaObject*, &TypeInfo::metaObject> >,
             ranked_non_unique<tag<ClassName>, const_mem_fun<TypeInfo, const QByteArrayView, &TypeInfo::className> >
         >
     > TypeInfoContainer;
@@ -61,7 +62,7 @@ class TypeList: public QAbstractListModel
     QList<int> filterMaskCache;
     
     public:
-    enum PropertyRole { RoleName, RoleNProperties, RolePropertiesPreview, RoleNMethods, RoleMethodsPreview, RoleSuperclassName, RoleFilterMatch };
+    enum PropertyRole { RoleHandle, RoleName, RoleNProperties, RolePropertiesPreview, RoleNMethods, RoleMethodsPreview, RoleSuperclassHandle, RoleSuperclassName, RoleFilterMatch };
     Q_ENUM(PropertyRole)
     enum FilterFlag { FilterName = 1, FilterProperties = 2, FilterMethods = 4, FilterEnums = 8, FilterCaseInsensitive = 16 };
     Q_ENUM(FilterFlag)
@@ -87,6 +88,7 @@ class TypeList: public QAbstractListModel
             std::make_pair((int)RolePropertiesPreview, QByteArray("propertiesPreview")),
             std::make_pair((int)RoleNMethods, QByteArray("nMethods")),
             std::make_pair((int)RoleMethodsPreview, QByteArray("methodsPreview")),
+            std::make_pair((int)RoleSuperclassHandle, QByteArray("superclassHandle")),
             std::make_pair((int)RoleSuperclassName, QByteArray("superclassName")),
             std::make_pair((int)RoleFilterMatch, QByteArray("filterMatch"))
         };
@@ -98,21 +100,34 @@ class TypeList: public QAbstractListModel
         }
         auto metaObject = metaObjects.get<ClassName>().nth(index.row())->metaObject;
         switch(role) {
-            case 0: //name
+            case RoleHandle: {
+                QVariant ret;
+                ret.emplace<TypeHandle>(TypeHandle({metaObject}));
+                return ret;
+            } break;
+            case RoleName:
                 return metaObject->className();
             break;
-            case 1: //nProperties
+            case RoleNProperties:
                 return metaObject->propertyCount();
             break;
-            case 2: //propertiesPreview
+            case RolePropertiesPreview:
                 return "not implemented";
             break;
-            case 3: //nMethods
+            case RoleNMethods:
                 return metaObject->methodCount();
             break;
-            case 4: //methodsPreview
+            case RoleMethodsPreview:
                 return "not implemented";
             break;
+            case RoleSuperclassHandle: {
+                auto *superclass = metaObject->superClass();
+                QVariant ret;
+                if(superclass) {
+                    ret.emplace<TypeHandle>(TypeHandle({superclass}));
+                }
+                return ret;
+            } break;
             case RoleSuperclassName: {
                 auto *superclass = metaObject->superClass();
                 if(superclass)
@@ -151,6 +166,15 @@ class TypeList: public QAbstractListModel
             return 0;
         }
         return new EnumList(metaObjects.get<ClassName>().nth(index)->metaObject, membership);
+    }
+    
+    Q_INVOKABLE int indexOf(TypeHandle handle) {
+        auto findIter = metaObjects.get<0>().find(handle.metaObject);
+        auto tellIter = metaObjects.project<ClassName>(findIter);
+        if(tellIter != metaObjects.get<ClassName>().end()) {
+            return static_cast<int>(metaObjects.get<ClassName>().rank(tellIter));
+        }
+        return -1;
     }
 
     Q_INVOKABLE void setFilter(const QList<QByteArray>& filterTerms, FilterFlags filterItems = FilterName) {

@@ -12,6 +12,7 @@ qml-component-explorer, a tool for listing native QML components and their attri
 #include <QVariant>
 #include <QQmlEngine>
 #include <QAbstractListModel>
+#include "TypeHandle.h"
 
 class PropertyList: public QAbstractListModel
 {
@@ -51,8 +52,9 @@ class PropertyList: public QAbstractListModel
     QHash<int, QByteArray> roleNames() const {
         return QHash{
             std::make_pair(0, QByteArray("name")),
-            std::make_pair(1, QByteArray("type")),
-            std::make_pair(2, QByteArray("flags"))
+            std::make_pair(1, QByteArray("typeName")),
+            std::make_pair(2, QByteArray("flags")),
+            std::make_pair(3, QByteArray("typeHandle"))
         };
     }
     
@@ -66,12 +68,17 @@ class PropertyList: public QAbstractListModel
             case 0: //name
                 return property.name();
             break;
-            case 1: //type
+            case 1: //typeName
                 return property.typeName();
             break;
             case 2: //flags
                 return property.isReadable() * Readable + property.isWritable() * Writable + property.isConstant() * Constant + property.isStored() * Stored + property.isEnumType() * EnumType + property.isFlagType() * FlagType + property.isFinal() * Final + property.isRequired() * Required + property.isBindable() * Bindable + property.hasNotifySignal() * Notify;
             break;
+            case 3: { //typeHandle
+                QVariant ret;
+                ret.emplace<TypeHandle>(TypeHandle({property.metaType().metaObject()}));
+                return ret;
+            } break;
         }
         return QVariant();
     }
