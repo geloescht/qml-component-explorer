@@ -4,9 +4,13 @@ qml-component-explorer, a tool for listing native QML components and their attri
  is licensed under GPL-3.0 (see LICENSE file)
 */
 
+#ifdef QT_NO_DEBUG
+#define QT_NO_DEBUG_OUTPUT
+#endif
+
 #include <qqml.h>
 #include "xovi.h"
-#include <stdio.h>
+#include <QtLogging>
 #include "TypeList.h"
 #include "MethodList.h"
 #include "PropertyList.h"
@@ -26,18 +30,18 @@ extern "C" int override$_ZN11QQmlPrivate11qmlregisterENS_16RegistrationTypeEPv(
     } else if(regtype == QQmlPrivate::TypeAndRevisionsRegistration) {
         auto type = reinterpret_cast<QQmlPrivate::RegisterTypeAndRevisions*>(data);
         if(type->uri) {
-            std::printf("[component-explorer] Registering type and revisions %s\n", type->uri);
+            qDebug("[component-explorer] Registering type and revisions %s", type->uri);
         }
         else {
-            std::printf("[component-explorer] Registering type and revisions without name\n");
+            qDebug("[component-explorer] Registering type and revisions without name");
         }
     } else if(regtype == QQmlPrivate::SingletonAndRevisionsRegistration) {
         auto type = reinterpret_cast<QQmlPrivate::RegisterSingletonTypeAndRevisions*>(data);
         if(type->uri) {
-            std::printf("[component-explorer] Registering singleton type and revisions %s\n", type->uri);
+            qDebug("[component-explorer] Registering singleton type and revisions %s", type->uri);
         }
         else {
-            std::printf("[component-explorer] Registering singleton type and revisions without name\n");
+            qDebug("[component-explorer] Registering singleton type and revisions without name");
         }
     } else if(regtype == QQmlPrivate::SingletonRegistration) {
         auto type = reinterpret_cast<QQmlPrivate::RegisterSingletonType*>(data);
@@ -45,19 +49,19 @@ extern "C" int override$_ZN11QQmlPrivate11qmlregisterENS_16RegistrationTypeEPv(
             typeList->addMetaObject(type->instanceMetaObject);
         }
     } else {
-        std::printf("[component-explorer] Registration of type %i\n", regtype);
+        qDebug("[component-explorer] Unhandled registration of type %i", regtype);
     }
     
     int ret = ((int (*)(QQmlPrivate::RegistrationType, void*))$_ZN11QQmlPrivate11qmlregisterENS_16RegistrationTypeEPv)(regtype, data);
     
-    std::printf("Registration done with id %i\n", ret);
+    qDebug("Registration done with id %i", ret);
     
     return ret;
 }
 
 extern "C" void _xovi_construct(){
     typeList = std::make_unique<TypeList>();
-    std::printf("[component-explorer] Loaded\n");
+    qInfo("[component-explorer] Loaded");
     qmlRegisterSingletonInstance("net.geloescht.ComponentExplorer", 1, 0, "TypeList", typeList.get());
     qmlRegisterType<MethodList>("net.geloescht.ComponentExplorer", 1, 0, "MethodList");
     qmlRegisterType<PropertyList>("net.geloescht.ComponentExplorer", 1, 0, "PropertyList");

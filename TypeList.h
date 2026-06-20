@@ -7,12 +7,17 @@ qml-component-explorer, a tool for listing native QML components and their attri
 #ifndef _TYPE_LIST_
 #define _TYPE_LIST_
 
+#ifdef QT_NO_DEBUG
+#define QT_NO_DEBUG_OUTPUT
+#endif
+
 #include <QObject>
 #include <QString>
 #include <QVariant>
 #include <QQmlEngine>
 #include <QList>
 #include <QBitArray>
+#include <QtLogging>
 #include <QAbstractListModel>
 #include <boost/multi_index_container.hpp>
 #include <boost/multi_index/ordered_index.hpp>
@@ -67,7 +72,7 @@ class TypeList: public QAbstractListModel
         beginInsertRows(QModelIndex(), metaObjects.size(), metaObjects.size());
         TypeInfo typeInfo = {metaObject};
         metaObjects.get<0>().insert(typeInfo);
-        std::printf("[component-explorer] Added MetaObject (%p) with name %s and %i methods\n", metaObject, metaObject->className(), metaObject->methodCount());
+        qDebug("[component-explorer] Added MetaObject (%p) with name %s and %i methods", metaObject, metaObject->className(), metaObject->methodCount());
         endInsertRows();
     }
     
@@ -118,7 +123,6 @@ class TypeList: public QAbstractListModel
             } break;
             case RoleFilterMatch:
                 if(index.row() < filterMaskCache.length()) {
-                    //std::printf("fm at %i = %i\n", index.row(), filterMaskCache[index.row()]);
                     return filterMaskCache[index.row()];
                 }
                 else
@@ -150,6 +154,8 @@ class TypeList: public QAbstractListModel
     }
 
     Q_INVOKABLE void setFilter(const QList<QByteArray>& filterTerms, FilterFlags filterItems = FilterName) {
+        qInfo("[component-explorer] filtering...");
+
         QList<QByteArray> mandatoryTerms, excludedTerms, alternativeTerms;
         for (auto& termUntrimmed : filterTerms) {
             auto term = termUntrimmed.trimmed();
@@ -158,17 +164,16 @@ class TypeList: public QAbstractListModel
             
             if(term.startsWith("+")) {
                 mandatoryTerms.append(term.sliced(1));
-                std::printf("mandatory %s, ", term.sliced(1).constData());
+                qDebug("mandatory %s, ", term.sliced(1).constData());
             }
             else if(term.startsWith("-")) {
                 excludedTerms.append(term.sliced(1));
-                std::printf("excluded %s, ", term.sliced(1).constData());
+                qDebug("excluded %s, ", term.sliced(1).constData());
             } else {
                 alternativeTerms.append(term);
-                std::printf("alternative %s, ", term.constData());
+                qDebug("alternative %s, ", term.constData());
             }
         }
-        std::printf("filtering...\n");
         
         emit layoutAboutToBeChanged();
         
@@ -183,7 +188,6 @@ class TypeList: public QAbstractListModel
         
         QList<QByteArrayView> haystack;
         QBitArray alternativeFound(alternativeTerms.length());
-        const QBitArray allMandatoryFound(mandatoryTerms.length(), true);
         
         int i = 0;
         for (auto& typeInfo : metaObjects.get<ClassName>()) {
@@ -204,12 +208,6 @@ class TypeList: public QAbstractListModel
                 haystack.append(metaObject->enumerator(i).name());
             }
             
-            /*
-            std::printf("Haystack (flags %i): ", filterItems.toInt());
-            for(auto& toBeFiltered : haystack) {
-                std::printf("%s, ", toBeFiltered.constData());
-            }
-            */
             bool haveHope = true;
             alternativeFound.fill(false);
             
@@ -251,20 +249,20 @@ class TypeList: public QAbstractListModel
                         }
                     }
                 }
-                //std::printf("count %i ", alternativeFound.count(true));
+
                 if(alternativeTerms.length() > 0)
                   filterMaskCache[i] = alternativeFound.count(true);
                 else
                   filterMaskCache[i] = mandatoryTerms.length() + excludedTerms.length();
             } else {
-                //std::printf("giving up ");
+                // giving up
                 filterMaskCache[i] = 0;
             }
-            //std::printf("done.\n");
+
             ++i;
         }
         
-        std::printf("done.\n");
+        qInfo("[component-explorer] filtering done.");
         emit dataChanged(index(0, 0), index(metaObjects.size(), 0));
         emit layoutChanged();
     }
