@@ -8,6 +8,10 @@ struct TypeHandle {
     Q_GADGET
     public:
     const QMetaObject *metaObject;
+    
+    Q_INVOKABLE bool valid() const {
+        return metaObject != NULL;
+    }
 };
 
 Q_DECLARE_METATYPE(TypeHandle)

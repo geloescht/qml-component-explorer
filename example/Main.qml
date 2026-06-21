@@ -448,7 +448,7 @@ Rectangle {
                                     width: 10
                                 }
                                 Text {
-                                    text: '<a href=\"type\">' + typeName + "</a> " + name
+                                    text: (typeHandle.valid() ? ('<a href=\"type\">' + typeName + "</a>") : typeName) + " " + name
                                     font.family: "Monaspace Xenon"
                                     font.pointSize: 12
                                     Layout.fillWidth: true
@@ -506,10 +506,25 @@ Rectangle {
                                 
                                 function createSignatureHTML(text, handles) {
                                     if(handles.length > 0) {
-                                        text = text.replace('(', '(<a href="argument/0">');
+                                        if(handles[0].valid()) {
+                                            text = text.replace('(', '(<a href="argument/0">');
+                                        }
                                         let count = 0;
-                                        text = text.replace(/,/g, (_) => '</a>, <a href="argument/' + (++count) + '">');
-                                        text = text.replace(')', '</a>)');
+                                        text = text.replace(/,/g, (_) => {
+                                            let ret = '';
+                                            if(handles[count].valid()) {
+                                                ret = '</a>'
+                                            }
+                                            count++;
+                                            if(handles[count].valid()) {
+                                                return ret + ', <a href="argument/' + count + '">';
+                                            } else {
+                                                return ret + ', ';
+                                            }
+                                        });
+                                        if(handles[count].valid()) {
+                                            text = text.replace(')', '</a>)');
+                                        }
                                     }
                                     return text;
                                 }
@@ -519,7 +534,7 @@ Rectangle {
                                 }
 
                                 Text {
-                                    text: '<a href="return">' + returnTypeName + "</a> " + createSignatureHTML(sig, argumentTypeHandle)
+                                    text: (returnTypeHandle.valid() ? ('<a href="return">' + returnTypeName + "</a>") : returnTypeName) + " " + createSignatureHTML(sig, argumentTypeHandle)
                                     font.family: "Monaspace Xenon"
                                     font.pointSize: 12
                                     Layout.fillWidth: true
