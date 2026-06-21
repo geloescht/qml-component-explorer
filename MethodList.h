@@ -12,6 +12,7 @@ qml-component-explorer, a tool for listing native QML components and their attri
 #include <QVariant>
 #include <QQmlEngine>
 #include <QAbstractListModel>
+#include "TypeHandle.h"
 
 class MethodList: public QAbstractListModel
 {
@@ -51,10 +52,12 @@ class MethodList: public QAbstractListModel
     QHash<int, QByteArray> roleNames() const {
         return QHash{
             std::make_pair(0, QByteArray("name")),
-            std::make_pair(1, QByteArray("returnType")),
+            std::make_pair(1, QByteArray("returnTypeName")),
             std::make_pair(2, QByteArray("signature")),
             std::make_pair(3, QByteArray("access")),
-            std::make_pair(4, QByteArray("methodType"))
+            std::make_pair(4, QByteArray("methodType")),
+            std::make_pair(5, QByteArray("returnTypeHandle")),
+            std::make_pair(6, QByteArray("argumentTypeHandle")),
         };
     }
     
@@ -70,7 +73,7 @@ class MethodList: public QAbstractListModel
             case 0: //name
                 return method.name();
             break;
-            case 1: //returnType
+            case 1: //returnTypeName
                 return method.returnMetaType().name();
             break;
             case 2: //signature
@@ -82,6 +85,20 @@ class MethodList: public QAbstractListModel
             case 4: //methodType
                 return method.methodType();
             break;
+            case 5: { //returnTypeHandle
+                QVariant ret;
+                ret.emplace<TypeHandle>(TypeHandle({method.returnMetaType().metaObject()}));
+                return ret;
+            } break;
+            case 6: { //argumentTypeHandle
+                QVariantList ret;
+                for(int i = 0; i < method.parameterCount(); ++i) {
+                    QVariant variant;
+                    variant.emplace<TypeHandle>(TypeHandle({method.parameterMetaType(i).metaObject()}));
+                    ret.append(variant);
+                }
+                return ret;
+            } break;
         }
         return QVariant();
     }

@@ -356,6 +356,11 @@ Rectangle {
                     flickableDirection: Flickable.VerticalFlick
                     contentWidth: contentItem.childrenRect.width
                     contentHeight: contentItem.childrenRect.height
+                    
+                    Connections {
+                        target: componentListView
+                        onCurrentIndexChanged: detailsScroll.contentY = 0
+                    }
 
                     Column {
                         id: detailsColumn
@@ -497,16 +502,36 @@ Rectangle {
                             RowLayout {
                                 width: detailsColumn.width
                                 property var methodTypeString: ["invokable", "signal", "slot", "constructor"]
+                                property string sig: signature //needed, because signature is a QVariant that doesn't support Javascript string properties
+                                
+                                function createSignatureHTML(text, handles) {
+                                    if(handles.length > 0) {
+                                        text = text.replace('(', '(<a href="argument/0">');
+                                        let count = 0;
+                                        text = text.replace(/,/g, (_) => '</a>, <a href="argument/' + (++count) + '">');
+                                        text = text.replace(')', '</a>)');
+                                    }
+                                    return text;
+                                }
 
                                 Item {
                                     width: 10
                                 }
 
                                 Text {
-                                    text: returnType + " " + signature
+                                    text: '<a href="return">' + returnTypeName + "</a> " + createSignatureHTML(sig, argumentTypeHandle)
                                     font.family: "Monaspace Xenon"
                                     font.pointSize: 12
                                     Layout.fillWidth: true
+                                    
+                                    onLinkActivated: (link) => {
+                                        let parts = link.split("/");
+                                        if(parts[0] == "argument") {
+                                            componentListView.navigate(argumentTypeHandle[parseInt(parts[1])]);
+                                        } else if(parts[0] == "return") {
+                                            componentListView.navigate(returnTypeHandle);
+                                        }
+                                    }
                                 }
                                 Text {
                                     color: "#555555"
