@@ -286,6 +286,8 @@ Rectangle {
                         if(index >= 0) {
                             positionViewAtIndex(index, ListView.Contain);
                             currentIndex = index;
+                        } else {
+                            currentIndex = model.addType(typeHandle);
                         }
                     }
 

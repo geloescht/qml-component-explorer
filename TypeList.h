@@ -69,12 +69,24 @@ class TypeList: public QAbstractListModel
     Q_DECLARE_FLAGS(FilterFlags, FilterFlag)
     
     
-    void addMetaObject(const QMetaObject *metaObject) {
-        beginInsertRows(QModelIndex(), metaObjects.size(), metaObjects.size());
+    int addMetaObject(const QMetaObject *metaObject) {
+        auto findIter = metaObjects.get<0>().find(metaObject);
+        if(findIter != metaObjects.get<0>().end() || metaObject == NULL) {
+            return -1;
+        }
+        
+        int index = metaObjects.get<ClassName>().lower_bound_rank(metaObject->className());
+        beginInsertRows(QModelIndex(), index, index);
         TypeInfo typeInfo = {metaObject};
         metaObjects.get<0>().insert(typeInfo);
         qDebug("[component-explorer] Added MetaObject (%p) with name %s and %i methods", metaObject, metaObject->className(), metaObject->methodCount());
         endInsertRows();
+        
+        return index;
+    }
+    
+    Q_INVOKABLE int addType(const TypeHandle type) {
+        return addMetaObject(type.metaObject);
     }
     
     int rowCount(const QModelIndex &parent = QModelIndex()) const {
