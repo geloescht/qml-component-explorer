@@ -9,6 +9,7 @@ qml-component-explorer, a tool for listing native QML components and their attri
 #endif
 
 #include <qqml.h>
+#include <QFont>
 #include "xovi.h"
 #include <QtLogging>
 #include "TypeList.h"
@@ -66,4 +67,7 @@ extern "C" void _xovi_construct(){
     qmlRegisterType<MethodList>("net.geloescht.ComponentExplorer", 1, 0, "MethodList");
     qmlRegisterType<PropertyList>("net.geloescht.ComponentExplorer", 1, 0, "PropertyList");
     qmlRegisterType<EnumList>("net.geloescht.ComponentExplorer", 1, 0, "EnumList");
+
+    QFont::insertSubstitution("monospace", "Noto Mono");
+    QFont::insertSubstitution("monospace", "Noto Sans Mono");
 }

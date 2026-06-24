@@ -400,7 +400,7 @@ Rectangle {
                                     text: "enum " + name + " { " + Object.keys(values).map((key) => key + " = " + values[key]). join(", ") + " }"
                                     lineHeight: 1.5
                                     wrapMode: Text.WordWrap
-                                    font.family: "Monaspace Xenon"
+                                    font.family: "monospace"
                                     font.pointSize: 12
                                     Layout.fillWidth: true
                                 }
@@ -451,7 +451,7 @@ Rectangle {
                                 }
                                 Text {
                                     text: (typeHandle.valid() ? ('<a href=\"type\">' + typeName + "</a>") : typeName) + " " + name
-                                    font.family: "Monaspace Xenon"
+                                    font.family: "monospace"
                                     font.pointSize: 12
                                     Layout.fillWidth: true
                                     
@@ -537,7 +537,7 @@ Rectangle {
 
                                 Text {
                                     text: (returnTypeHandle.valid() ? ('<a href="return">' + returnTypeName + "</a>") : returnTypeName) + " " + createSignatureHTML(sig, argumentTypeHandle)
-                                    font.family: "Monaspace Xenon"
+                                    font.family: "monospace"
                                     font.pointSize: 12
                                     Layout.fillWidth: true
                                     
