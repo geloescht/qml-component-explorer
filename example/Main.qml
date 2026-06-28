@@ -96,7 +96,7 @@ Rectangle {
                             height: 32
                             source: filterActive ? "icons/filter-name.svg" : "icons/no-filter-name.svg"
                             fillMode: Image.PreserveAspectFit
-                            visible: !componentListView.currentItem
+                            visible: componentListView.currentIndex < 0
                             
                             MouseArea {
                                 id: filterNameMouseArea
@@ -117,7 +117,7 @@ Rectangle {
                             source: filterActive ? "icons/filter-property.svg" : "icons/no-filter-property.svg"
                             property int filterActive: 0
                             fillMode: Image.PreserveAspectFit
-                            visible: !componentListView.currentItem
+                            visible: componentListView.currentIndex < 0
                             
                             MouseArea {
                                 id: filterPropertyMouseArea
@@ -138,7 +138,7 @@ Rectangle {
                             source: filterActive ? "icons/filter-enum.svg" : "icons/no-filter-enum.svg"
                             property int filterActive: 0
                             fillMode: Image.PreserveAspectFit
-                            visible: !componentListView.currentItem
+                            visible: componentListView.currentIndex < 0
                             
                             MouseArea {
                                 id: filterEnumMouseArea
@@ -240,7 +240,7 @@ Rectangle {
                             Text {
                                 width: 120
                                 text: name
-                                elide: Text.ElideRight
+                                elide: Text.ElideMiddle
                                 Layout.fillWidth: true
                                 Layout.maximumWidth: componentList.width
                                 font.pointSize: 14
@@ -319,7 +319,7 @@ Rectangle {
                 id: componentDetailsRect
                 width: 600
                 height: 200
-                visible: componentListView.currentItem != null
+                visible: componentListView.currentIndex >= 0
                 color: "#ffffff"
                 border.width: 2
                 enabled: true
@@ -364,14 +364,19 @@ Rectangle {
                         onCurrentIndexChanged: detailsScroll.contentY = 0
                     }
 
-                    Column {
+                    ColumnLayout {
                         id: detailsColumn
                         width: componentDetailsRect.width - 50 * 2
                         spacing: 10
 
                         Text {
                             id: detailsTitle
-                            text: componentListView.getModelProperty(componentListView.currentIndex, TypeList.RoleName)
+                            property string qmlName: componentListView.getCurrentItemProperty(TypeList.RoleQmlName)
+                            property string cppName: componentListView.getCurrentItemProperty(TypeList.RoleCppName)
+                            text: qmlName ? qmlName + " <small>(" + cppName + " in C++)</small>" : cppName
+                            wrapMode: Text.WordWrap
+                            Layout.fillWidth: true
+                            textFormat: Text.RichText
                             font.pointSize: 22
                             font.family: "serif"
                         }

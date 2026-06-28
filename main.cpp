@@ -26,7 +26,8 @@ extern "C" int override$_ZN11QQmlPrivate11qmlregisterENS_16RegistrationTypeEPv(
     if(regtype == QQmlPrivate::TypeRegistration) {
         auto type = reinterpret_cast<QQmlPrivate::RegisterType*>(data);
         if(typeList && type->metaObject) {
-            typeList->addMetaObject(type->metaObject);
+            TypeList::QmlTypeInfo qmlTypeInfo = {type->uri, type->elementName, type->version, type->revision};
+            typeList->addMetaObject(type->metaObject, &qmlTypeInfo);
          }
     } else if(regtype == QQmlPrivate::TypeAndRevisionsRegistration) {
         auto type = reinterpret_cast<QQmlPrivate::RegisterTypeAndRevisions*>(data);
@@ -47,7 +48,8 @@ extern "C" int override$_ZN11QQmlPrivate11qmlregisterENS_16RegistrationTypeEPv(
     } else if(regtype == QQmlPrivate::SingletonRegistration) {
         auto type = reinterpret_cast<QQmlPrivate::RegisterSingletonType*>(data);
         if(typeList && type->instanceMetaObject) {
-            typeList->addMetaObject(type->instanceMetaObject);
+            TypeList::QmlTypeInfo qmlTypeInfo = {type->uri, type->typeName, type->version, type->revision};
+            typeList->addMetaObject(type->instanceMetaObject, &qmlTypeInfo, TypeList::SingletonType);
         }
     } else {
         qDebug("[component-explorer] Unhandled registration of type %i", regtype);

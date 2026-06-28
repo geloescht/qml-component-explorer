@@ -36,18 +36,38 @@ class TypeList: public QAbstractListModel
 {
     Q_OBJECT
     
+    public:
+    enum TypeTrait { NoneTrait = 0, QMLType = 1, SingletonType = 2 };
+    Q_ENUM(TypeTrait)
+    Q_DECLARE_FLAGS(TypeTraits, TypeTrait)
+    
+    struct QmlTypeInfo {
+        QByteArray uri;
+        QByteArray name;
+        QTypeRevision version;
+        QTypeRevision revision;
+    };
+    
     private:
-    struct ClassName{};
+    struct SortName{};
 
     struct TypeInfo {
         const QMetaObject* metaObject;
+        TypeTraits traits;
+        std::optional<QmlTypeInfo> qmlInfo;
 
-        const QByteArrayView className() const {
-            return QByteArrayView(metaObject->className());
-        }
-
-        bool operator<(const TypeInfo& other) const {
-            return metaObject < other.metaObject;
+        const QByteArray sortName() const {
+            // if this becomes too slow, consider precalculating and storing sortName
+            QByteArray ret;
+            if(qmlInfo) {
+                ret = qmlInfo.value().uri + ".";
+            }
+            if(qmlInfo && qmlInfo.value().name.length() > 0) {
+                ret += qmlInfo.value().name;
+            } else {
+                ret += metaObject->className();
+            }
+            return ret.replace("::", ".").toLower();
         }
     };
 
@@ -55,29 +75,34 @@ class TypeList: public QAbstractListModel
         TypeInfo,
         indexed_by<
             ordered_unique<member<TypeInfo, const QMetaObject*, &TypeInfo::metaObject> >,
-            ranked_non_unique<tag<ClassName>, const_mem_fun<TypeInfo, const QByteArrayView, &TypeInfo::className> >
+            ranked_non_unique<tag<SortName>, const_mem_fun<TypeInfo, const QByteArray, &TypeInfo::sortName> >
         >
     > TypeInfoContainer;
     TypeInfoContainer metaObjects;
     QList<int> filterMaskCache;
     
     public:
-    enum PropertyRole { RoleHandle, RoleName, RoleNProperties, RolePropertiesPreview, RoleNMethods, RoleMethodsPreview, RoleSuperclassHandle, RoleSuperclassName, RoleFilterMatch };
+    enum PropertyRole { RoleHandle, RoleName, RoleCppName, RoleQmlName, RoleNProperties, RolePropertiesPreview, RoleNMethods, RoleMethodsPreview, RoleSuperclassHandle, RoleSuperclassName, RoleFilterMatch, };
     Q_ENUM(PropertyRole)
     enum FilterFlag { FilterName = 1, FilterProperties = 2, FilterMethods = 4, FilterEnums = 8, FilterCaseInsensitive = 16 };
     Q_ENUM(FilterFlag)
     Q_DECLARE_FLAGS(FilterFlags, FilterFlag)
     
-    
-    int addMetaObject(const QMetaObject *metaObject) {
+    int addMetaObject(const QMetaObject *metaObject, const QmlTypeInfo* qmlTypeInfo = NULL, TypeTraits typeTraits = NoneTrait) {
         auto findIter = metaObjects.get<0>().find(metaObject);
         if(findIter != metaObjects.get<0>().end() || metaObject == NULL) {
             return -1;
         }
         
-        int index = metaObjects.get<ClassName>().lower_bound_rank(metaObject->className());
+        TypeInfo typeInfo = {metaObject, typeTraits};
+        int index = metaObjects.get<SortName>().lower_bound_rank(typeInfo.sortName());
         beginInsertRows(QModelIndex(), index, index);
-        TypeInfo typeInfo = {metaObject};
+        
+        if(qmlTypeInfo != NULL) {
+            typeInfo.qmlInfo = *qmlTypeInfo;
+            typeInfo.traits |= QMLType;
+        }
+        
         metaObjects.get<0>().insert(typeInfo);
         qDebug("[component-explorer] Added MetaObject (%p) with name %s and %i methods", metaObject, metaObject->className(), metaObject->methodCount());
         endInsertRows();
@@ -95,7 +120,10 @@ class TypeList: public QAbstractListModel
     
     QHash<int, QByteArray> roleNames() const {
         return QHash{
+            std::make_pair((int)RoleHandle, QByteArray("classHandle")),
             std::make_pair((int)RoleName, QByteArray("name")),
+            std::make_pair((int)RoleCppName, QByteArray("cppName")),
+            std::make_pair((int)RoleQmlName, QByteArray("qmlName")),
             std::make_pair((int)RoleNProperties, QByteArray("nProperties")),
             std::make_pair((int)RolePropertiesPreview, QByteArray("propertiesPreview")),
             std::make_pair((int)RoleNMethods, QByteArray("nMethods")),
@@ -110,16 +138,39 @@ class TypeList: public QAbstractListModel
         if(index.row() < 0 || index.row() >= metaObjects.size()) {
             return QVariant();
         }
-        auto metaObject = metaObjects.get<ClassName>().nth(index.row())->metaObject;
+        const auto& typeInfo = *metaObjects.get<SortName>().nth(index.row());
+        auto *metaObject = typeInfo.metaObject;
         switch(role) {
             case RoleHandle: {
                 QVariant ret;
                 ret.emplace<TypeHandle>(TypeHandle({metaObject}));
                 return ret;
             } break;
-            case RoleName:
+            case RoleName: {
+                QByteArray ret;
+                if(typeInfo.qmlInfo) {
+                    ret = typeInfo.qmlInfo.value().uri + ".";
+                }
+                if(typeInfo.qmlInfo && typeInfo.qmlInfo.value().name.length() > 0) {
+                    ret += typeInfo.qmlInfo.value().name;
+                } else {
+                    ret += metaObject->className();
+                }
+                return ret;
+            } break;
+            case RoleCppName:
                 return metaObject->className();
             break;
+            case RoleQmlName: {
+                if(!typeInfo.qmlInfo) {
+                    return QVariant();
+                }
+                if(typeInfo.qmlInfo.value().name.length() > 0) {
+                    return typeInfo.qmlInfo.value().uri + "." + typeInfo.qmlInfo.value().name;
+                } else {
+                    return typeInfo.qmlInfo.value().uri + "." + metaObject->className();
+                }
+            } break;
             case RoleNProperties:
                 return metaObject->propertyCount();
             break;
@@ -144,6 +195,10 @@ class TypeList: public QAbstractListModel
                 auto *superclass = metaObject->superClass();
                 if(superclass)
                 {
+                    int superclassIndex = indexOf(TypeHandle({superclass}));
+                    if(superclassIndex >= 0) {
+                        return data(this->index(superclassIndex, 0), RoleName);
+                    }
                     return superclass->className();
                 } else
                     return "";
@@ -163,28 +218,28 @@ class TypeList: public QAbstractListModel
         if(index < 0 || index >= metaObjects.size()) {
             return 0;
         }
-        return new MethodList(metaObjects.get<ClassName>().nth(index)->metaObject, membership);
+        return new MethodList(metaObjects.get<SortName>().nth(index)->metaObject, membership);
     }
     
     Q_INVOKABLE PropertyList* propertyList(int index, PropertyList::ClassMembership membership=PropertyList::OwnProperties) const {
         if(index < 0 || index >= metaObjects.size()) {
             return 0;
         }
-        return new PropertyList(metaObjects.get<ClassName>().nth(index)->metaObject, membership);
+        return new PropertyList(metaObjects.get<SortName>().nth(index)->metaObject, membership);
     }
     
     Q_INVOKABLE EnumList* enumList(int index, EnumList::ClassMembership membership=EnumList::OwnEnums) const {
         if(index < 0 || index >= metaObjects.size()) {
             return 0;
         }
-        return new EnumList(metaObjects.get<ClassName>().nth(index)->metaObject, membership);
+        return new EnumList(metaObjects.get<SortName>().nth(index)->metaObject, membership);
     }
     
-    Q_INVOKABLE int indexOf(TypeHandle handle) {
+    Q_INVOKABLE int indexOf(TypeHandle handle) const {
         auto findIter = metaObjects.get<0>().find(handle.metaObject);
-        auto tellIter = metaObjects.project<ClassName>(findIter);
-        if(tellIter != metaObjects.get<ClassName>().end()) {
-            return static_cast<int>(metaObjects.get<ClassName>().rank(tellIter));
+        auto tellIter = metaObjects.project<SortName>(findIter);
+        if(tellIter != metaObjects.get<SortName>().end()) {
+            return static_cast<int>(metaObjects.get<SortName>().rank(tellIter));
         }
         return -1;
     }
@@ -226,7 +281,7 @@ class TypeList: public QAbstractListModel
         QBitArray alternativeFound(alternativeTerms.length());
         
         int i = 0;
-        for (auto& typeInfo : metaObjects.get<ClassName>()) {
+        for (auto& typeInfo : metaObjects.get<SortName>()) {
             const QMetaObject* metaObject = typeInfo.metaObject;
             
             // collect all the strings to be examined in haystack
