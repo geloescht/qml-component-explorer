@@ -21,8 +21,7 @@ Rectangle {
         anchors.left: parent.left
         anchors.top: parent.top
         anchors.margins: 100
-        font.pointSize: 26
-        font.family: "serif"
+        font: Constants.titleFont
     }
 
     Rectangle {
@@ -72,9 +71,10 @@ Rectangle {
                             id: filterInput
                             color: "#000000"
                             verticalAlignment: Text.AlignVCenter
+                            Layout.fillHeight: true
                             Layout.fillWidth: true
                             placeholderText: qsTr("Filter Components...")
-                            font.pointSize: 12
+                            font: Constants.textFont
                             padding: 5
 
                             property string acceptedText: ""
@@ -97,7 +97,7 @@ Rectangle {
                             source: filterActive ? "icons/filter-name.svg" : "icons/no-filter-name.svg"
                             fillMode: Image.PreserveAspectFit
                             visible: componentListView.currentIndex < 0
-                            
+
                             MouseArea {
                                 id: filterNameMouseArea
                                 anchors.fill: parent
@@ -160,7 +160,7 @@ Rectangle {
                             property int filterActive: 0
                             fillMode: Image.PreserveAspectFit
                             visible: componentListView.currentIndex < 0
-                            
+
                             MouseArea {
                                 id: filterEnumMouseArea
                                 anchors.fill: parent
@@ -208,7 +208,7 @@ Rectangle {
                                 elide: Text.ElideRight
                                 Layout.fillWidth: true
                                 Layout.maximumWidth: componentList.width
-                                font.pointSize: 14
+                                font: Constants.textFont
                             }
 
                             Text {
@@ -216,7 +216,7 @@ Rectangle {
                                 text: "Properties"
                                 horizontalAlignment: Text.AlignRight
                                 Layout.preferredWidth: 120
-                                font.pointSize: 14
+                                font: Constants.textFont
                                 visible: !componentListView.currentItem
                             }
 
@@ -226,7 +226,7 @@ Rectangle {
                                 text: "Methods"
                                 horizontalAlignment: Text.AlignRight
                                 Layout.preferredWidth: 120
-                                font.pointSize: 14
+                                font: Constants.textFont
                             }
                         }
                     }
@@ -264,7 +264,7 @@ Rectangle {
                                 elide: Text.ElideMiddle
                                 Layout.fillWidth: true
                                 Layout.maximumWidth: componentList.width
-                                font.pointSize: 14
+                                font: Constants.textFont
                                 color: parent.textColor
                             }
 
@@ -273,7 +273,7 @@ Rectangle {
                                 text: nProperties
                                 horizontalAlignment: Text.AlignRight
                                 Layout.preferredWidth: 120
-                                font.pointSize: 14
+                                font: Constants.textFont
                                 color: parent.textColor
                                 visible: !componentListView.currentItem
                             }
@@ -285,7 +285,7 @@ Rectangle {
                                 text: nMethods
                                 horizontalAlignment: Text.AlignRight
                                 Layout.preferredWidth: 120
-                                font.pointSize: 14
+                                font: Constants.textFont
                             }
                         }
 
@@ -379,10 +379,10 @@ Rectangle {
                     flickableDirection: Flickable.VerticalFlick
                     contentWidth: contentItem.childrenRect.width
                     contentHeight: contentItem.childrenRect.height
-                    
+
                     Connections {
                         target: componentListView
-                        onCurrentIndexChanged: detailsScroll.contentY = 0
+                        function onCurrentIndexChanged() { detailsScroll.contentY = 0 }
                     }
 
                     ColumnLayout {
@@ -406,7 +406,7 @@ Rectangle {
                             property string superclass: componentListView.getModelProperty(componentListView.currentIndex, TypeList.RoleSuperclassName)
                             visible: superclass != ""
                             text: 'inherits <a href="superclass">' + superclass + '</a>'
-                            font.pointSize: 14
+                            font: Constants.textFont
                             
                             onLinkActivated: {
                                 let handle = componentListView.getModelProperty(componentListView.currentIndex, TypeList.RoleSuperclassHandle);
@@ -426,8 +426,7 @@ Rectangle {
                                     text: "enum " + name + " { " + Object.keys(values).map((key) => key + " = " + values[key]). join(", ") + " }"
                                     lineHeight: 1.5
                                     wrapMode: Text.WordWrap
-                                    font.family: "monospace"
-                                    font.pointSize: 12
+                                    font: Constants.codeFont
                                     Layout.fillWidth: true
                                 }
                             }
@@ -439,7 +438,7 @@ Rectangle {
                             text: qsTr("Own enumerations")
                             verticalAlignment: Text.AlignBottom
                             lineHeight: 1.2
-                            font.pointSize: 18
+                            font: Constants.subHeadlineFont
                         }
 
                         Repeater {
@@ -454,7 +453,7 @@ Rectangle {
                             text: qsTr("Inherited enumerations")
                             verticalAlignment: Text.AlignBottom
                             lineHeight: 1.2
-                            font.pointSize: 18
+                            font: Constants.subHeadlineFont
                         }
 
                         Repeater {
@@ -477,8 +476,7 @@ Rectangle {
                                 }
                                 Text {
                                     text: (typeHandle.valid() ? ('<a href=\"type\">' + typeName + "</a>") : typeName) + " " + name
-                                    font.family: "monospace"
-                                    font.pointSize: 12
+                                    font: Constants.codeFont
                                     Layout.fillWidth: true
                                     
                                     onLinkActivated: componentListView.navigate(typeHandle)
@@ -487,7 +485,7 @@ Rectangle {
                                 Text {
                                     color: "#555555"
                                     text: "[ " + flagsToString(flags) + " ]"
-                                    font.pointSize: 14
+                                    font: Constants.textFont
                                     horizontalAlignment: Text.AlignRight
                                 }
                             }
@@ -498,7 +496,7 @@ Rectangle {
                             text: qsTr("Own properties")
                             verticalAlignment: Text.AlignBottom
                             lineHeight: 1.2
-                            font.pointSize: 18
+                            font: Constants.subHeadlineFont
                             visible: ownPropertyListView.count > 0
                         }
 
@@ -514,7 +512,7 @@ Rectangle {
                             text: qsTr("Inherited properties")
                             verticalAlignment: Text.AlignBottom
                             lineHeight: 1.2
-                            font.pointSize: 18
+                            font: Constants.subHeadlineFont
                             visible: inheritedPropertyListView.count > 0
                         }
 
@@ -563,8 +561,7 @@ Rectangle {
 
                                 Text {
                                     text: (returnTypeHandle.valid() ? ('<a href="return">' + returnTypeName + "</a>") : returnTypeName) + " " + createSignatureHTML(sig, argumentTypeHandle)
-                                    font.family: "monospace"
-                                    font.pointSize: 12
+                                    font: Constants.codeFont
                                     Layout.fillWidth: true
                                     
                                     onLinkActivated: (link) => {
@@ -580,7 +577,7 @@ Rectangle {
                                     color: "#555555"
                                     text: "[ " + access + " " + methodTypeString[methodType] + " ]"
                                     horizontalAlignment: Text.AlignRight
-                                    font.pointSize: 14
+                                    font: Constants.textFont
                                 }
                             }
                         }
@@ -590,7 +587,7 @@ Rectangle {
                             text: qsTr("Own methods")
                             verticalAlignment: Text.AlignBottom
                             lineHeight: 1.2
-                            font.pointSize: 18
+                            font: Constants.subHeadlineFont
                             visible: ownMethodListView.count > 0
                         }
 
@@ -606,7 +603,7 @@ Rectangle {
                             text: qsTr("Inherited methods")
                             verticalAlignment: Text.AlignBottom
                             lineHeight: 1.2
-                            font.pointSize: 18
+                            font: Constants.subHeadlineFont
                             visible: inheritedMethodListView.count > 0
                         }
 
