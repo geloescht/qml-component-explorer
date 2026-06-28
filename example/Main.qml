@@ -83,7 +83,7 @@ Rectangle {
                                 ScriptAction { script: filterInput.focus = false }
                                 ScriptAction { script: loadingImage.visible = true }
                                 PauseAnimation { duration: 100 }
-                                ScriptAction { script: componentListView.model.setFilter(filterInput.text.split(" "), filterName.filterActive + filterProperty.filterActive + filterEnum.filterActive) }
+                                ScriptAction { script: componentListView.model.setFilter(filterInput.text.split(" "), filterName.filterActive + filterProperty.filterActive + filterMethod.filterActive + filterEnum.filterActive) }
                                 ScriptAction { script: loadingImage.visible = false }
                             }
                         }
@@ -118,7 +118,7 @@ Rectangle {
                             property int filterActive: 0
                             fillMode: Image.PreserveAspectFit
                             visible: componentListView.currentIndex < 0
-                            
+
                             MouseArea {
                                 id: filterPropertyMouseArea
                                 anchors.fill: parent
@@ -126,6 +126,27 @@ Rectangle {
                                     target: filterPropertyMouseArea
                                     function onClicked() {
                                         filterProperty.filterActive = filterProperty.filterActive ? 0 : TypeList.FilterProperties
+                                    }
+                                }
+                            }
+                        }
+
+                        Image {
+                            id: filterMethod
+                            width: 32
+                            height: 32
+                            source: filterActive ? "icons/filter-method.svg" : "icons/no-filter-method.svg"
+                            property int filterActive: 0
+                            fillMode: Image.PreserveAspectFit
+                            visible: componentListView.currentIndex < 0
+
+                            MouseArea {
+                                id: filterMethodMouseArea
+                                anchors.fill: parent
+                                Connections {
+                                    target: filterMethodMouseArea
+                                    function onClicked() {
+                                        filterMethod.filterActive = filterMethod.filterActive ? 0 : TypeList.FilterMethods
                                     }
                                 }
                             }

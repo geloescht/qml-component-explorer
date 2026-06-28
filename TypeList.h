@@ -278,6 +278,7 @@ class TypeList: public QAbstractListModel
         filterMaskCache.resize(metaObjects.size());
         
         QList<QByteArrayView> haystack;
+        QList<QByteArray> ownedHaystack;
         QBitArray alternativeFound(alternativeTerms.length());
         
         int i = 0;
@@ -285,16 +286,20 @@ class TypeList: public QAbstractListModel
             const QMetaObject* metaObject = typeInfo.metaObject;
             
             // collect all the strings to be examined in haystack
-            haystack.clear();
             if(filterItems & FilterName) {
                 haystack.append(metaObject->className());
+                if(typeInfo.qmlInfo) {
+                    haystack.append(QByteArrayView(typeInfo.qmlInfo->uri));
+                    haystack.append(QByteArrayView(typeInfo.qmlInfo->name));
+                }
             }
             for(int i = 0; filterItems & FilterProperties && i < metaObject->propertyCount(); ++i) {
                 haystack.append(metaObject->property(i).name());
             }
-            /*for(int i = 0; filterItems & FilterMethods && i < metaObject->methodCount(); ++i) {
-                haystack.append(metaObject->method(i).nameView());
-            }*/
+            for(int i = 0; filterItems & FilterMethods && i < metaObject->methodCount(); ++i) {
+                ownedHaystack.append(metaObject->method(i).name());
+                haystack.append(QByteArrayView(ownedHaystack.back()));
+            }
             for(int i = 0; filterItems & FilterEnums && i < metaObject->enumeratorCount(); ++i) {
                 haystack.append(metaObject->enumerator(i).name());
             }
@@ -351,6 +356,8 @@ class TypeList: public QAbstractListModel
             }
 
             ++i;
+            haystack.clear();
+            ownedHaystack.clear();
         }
         
         qInfo("[component-explorer] filtering done.");
