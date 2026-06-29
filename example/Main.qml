@@ -528,47 +528,24 @@ Rectangle {
                             RowLayout {
                                 width: detailsColumn.width
                                 property var methodTypeString: ["invokable", "signal", "slot", "constructor"]
-                                property string sig: signature //needed, because signature is a QVariant that doesn't support Javascript string properties
-                                
-                                function createSignatureHTML(text, handles) {
-                                    if(handles.length > 0) {
-                                        if(handles[0].valid()) {
-                                            text = text.replace('(', '(<a href="argument/0">');
-                                        }
-                                        let count = 0;
-                                        text = text.replace(/,/g, (_) => {
-                                            let ret = '';
-                                            if(handles[count].valid()) {
-                                                ret = '</a>'
-                                            }
-                                            count++;
-                                            if(handles[count].valid()) {
-                                                return ret + ', <a href="argument/' + count + '">';
-                                            } else {
-                                                return ret + ', ';
-                                            }
-                                        });
-                                        if(handles[count].valid()) {
-                                            text = text.replace(')', '</a>)');
-                                        }
-                                    }
-                                    return text;
-                                }
 
                                 Item {
                                     width: 10
                                 }
 
                                 Text {
-                                    text: (returnTypeHandle.valid() ? ('<a href="return">' + returnTypeName + "</a>") : returnTypeName) + " " + createSignatureHTML(sig, argumentTypeHandle)
+                                    text: "<p style=\"text-indent:-50px; margin-left: 50px;\">" + headerHtml + "</p>"
+                                    wrapMode: Text.WordWrap
+                                    textFormat: Text.RichText
                                     font: Constants.codeFont
                                     Layout.fillWidth: true
+                                    lineHeight: 1.2
                                     
                                     onLinkActivated: (link) => {
                                         let parts = link.split("/");
-                                        if(parts[0] == "argument") {
+                                        if(parts[0] == "argumentType") {
                                             componentListView.navigate(argumentTypeHandle[parseInt(parts[1])]);
-                                        } else if(parts[0] == "return") {
+                                        } else if(parts[0] == "returnType") {
                                             componentListView.navigate(returnTypeHandle);
                                         }
                                     }
@@ -577,6 +554,7 @@ Rectangle {
                                     color: "#555555"
                                     text: "[ " + access + " " + methodTypeString[methodType] + " ]"
                                     horizontalAlignment: Text.AlignRight
+                                    Layout.alignment: Qt.AlignRight | Qt.AlignTop
                                     font: Constants.textFont
                                 }
                             }

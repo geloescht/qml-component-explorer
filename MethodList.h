@@ -56,8 +56,10 @@ class MethodList: public QAbstractListModel
             std::make_pair(2, QByteArray("signature")),
             std::make_pair(3, QByteArray("access")),
             std::make_pair(4, QByteArray("methodType")),
-            std::make_pair(5, QByteArray("returnTypeHandle")),
-            std::make_pair(6, QByteArray("argumentTypeHandle")),
+            std::make_pair(5, QByteArray("header")),
+            std::make_pair(6, QByteArray("headerHtml")),
+            std::make_pair(7, QByteArray("returnTypeHandle")),
+            std::make_pair(8, QByteArray("argumentTypeHandle")),
         };
     }
     
@@ -85,12 +87,52 @@ class MethodList: public QAbstractListModel
             case 4: //methodType
                 return method.methodType();
             break;
-            case 5: { //returnTypeHandle
+            case 5:   //header
+            case 6: { //headerHtml
+                bool isHtml = role == 6;
+                QByteArray ret;
+                bool returnTypeValid = !!method.returnMetaType().metaObject();
+                if(isHtml && returnTypeValid) {
+                    ret += "<a href=\"returnType\">";
+                }
+                ret += method.returnMetaType().name();
+                if(isHtml && returnTypeValid) {
+                    ret += "</a> ";
+                } else {
+                    ret += " ";
+                }
+                ret += method.name();
+                ret += "(";
+                auto parameterNames = method.parameterNames();
+                auto parameterTypeNames = method.parameterTypes();
+                int count = method.parameterCount();
+                for(int i = 0; i < count; i++) {
+                    bool argumentTypeValid = !!method.parameterMetaType(i).metaObject();
+                    if(isHtml && argumentTypeValid) {
+                        ret += "<a href=\"argumentType/";
+                        ret += QByteArray::number(i);
+                        ret += "\">";
+                    }
+                    ret += parameterTypeNames[i];
+                    if(isHtml && argumentTypeValid) {
+                        ret += "</a> ";
+                    } else {
+                        ret += " ";
+                    }
+                    ret += parameterNames[i];
+                    if(i < count-1) {
+                        ret += ", ";
+                    }
+                }
+                ret += ")";
+                return ret;
+            } break;
+            case 7: { //returnTypeHandle
                 QVariant ret;
                 ret.emplace<TypeHandle>(TypeHandle({method.returnMetaType().metaObject()}));
                 return ret;
             } break;
-            case 6: { //argumentTypeHandle
+            case 8: { //argumentTypeHandle
                 QVariantList ret;
                 for(int i = 0; i < method.parameterCount(); ++i) {
                     QVariant variant;
