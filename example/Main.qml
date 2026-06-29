@@ -392,8 +392,8 @@ Rectangle {
 
                         Text {
                             id: detailsTitle
-                            property string qmlName: componentListView.getCurrentItemProperty(TypeList.RoleQmlName)
-                            property string cppName: componentListView.getCurrentItemProperty(TypeList.RoleCppName)
+                            property var qmlName: componentListView.getCurrentItemProperty(TypeList.RoleQmlName)
+                            property var cppName: componentListView.getCurrentItemProperty(TypeList.RoleCppName)
                             text: qmlName ? qmlName + " <small>(" + cppName + " in C++)</small>" : cppName
                             wrapMode: Text.WordWrap
                             Layout.fillWidth: true
